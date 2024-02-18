@@ -1,10 +1,13 @@
 import discord.ext.commands as discord_commands
 import discord
+import docker
 import json
 import os
 import requests
 import subprocess
 
+
+dockerclient = docker.from_env()
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -37,17 +40,17 @@ async def register(ctx):
 @bot.command(name="create")
 async def create(ctx, server_name, server_version):
     os.mkdir(server_name)
-    subprocess.run(["docker", "run", "-d", "-e", f"VERSION={server_version}", "-e", "EULA=TRUE", "-p", "25565:25565", "-v", f"./{server_name}:/data", "--name", f"serverbot_{server_name}", "itzg/minecraft-server"])
+    dockerclient.containers.run("itzg/minecraft-server", detach=True, environment=[f"VERSION={server_version}", "EULA=TRUE"], ports={25565: 25565}, name=f"serverbot_{server_name}")
     await ctx.send(f'Created server "{server_name}" with Minecraft version {server_version}.')
 
 @bot.command(name="start")
 async def start(ctx, server_name):
-    subprocess.run(["docker", "start", f"serverbot_{server_name}"])
+    dockerclient.containers.get(f"serverbot_{server_name}").start()
     await ctx.send(f'Starting server "{server_name}"')
     
 @bot.command(name="run")
 async def run(ctx, server_name, command):
-    subprocess.run(["docker", "exec", f"serverbot_{server_name}", "rcon-cli", command])
+    dockerclient.containers.get(f"serverbot_{server_name}").exec_run(f"rcon-cli {command}")
     await ctx.send(f"Ran command `{command}` on server {server_name}")
 
 
