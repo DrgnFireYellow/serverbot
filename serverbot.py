@@ -45,17 +45,26 @@ async def register(ctx):
 async def create(ctx, server_name, server_version):
     os.mkdir(server_name)
     dockerclient.containers.run("itzg/minecraft-server", detach=True, environment=[f"VERSION={server_version}", "EULA=TRUE"], ports={25565: 25565}, name=f"serverbot_{server_name}")
-    await ctx.send(f'Created server "{server_name}" with Minecraft version {server_version}.')
+    await ctx.send(f'Created server `{server_name}` with Minecraft version {server_version}.')
 
 @bot.command(name="start")
 async def start(ctx, server_name):
     dockerclient.containers.get(f"serverbot_{server_name}").start()
-    await ctx.send(f'Starting server "{server_name}"')
+    await ctx.send(f'Starting server `{server_name}`')
     
 @bot.command(name="run")
 async def run(ctx, server_name, command):
     dockerclient.containers.get(f"serverbot_{server_name}").exec_run(f"rcon-cli {command}")
-    await ctx.send(f"Ran command `{command}` on server {server_name}")
+    await ctx.send(f"Ran command `{command}` on server `{server_name}`")
 
+
+@bot.command(name="log")
+async def log(ctx, server_name):
+    await ctx.send(f"Most recent log output for server `{server_name}`: ```{dockerclient.containers.get(f'serverbot_{server_name}').logs()[-1000:].decode().replace("\\n", "\n")}```")
+
+@bot.command(name="stop")
+async def stop(ctx, server_name):
+    dockerclient.containers.get(f"serverbot_{server_name}").stop()
+    await ctx.send(f"Stopped server `{server_name}`")
 
 bot.run(args.bot_token)
