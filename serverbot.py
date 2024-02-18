@@ -3,8 +3,12 @@ import discord
 import docker
 import json
 import os
-import requests
-import subprocess
+import argparse
+
+
+argumentparser = argparse.ArgumentParser()
+argumentparser.add_argument("bot_token")
+args = argumentparser.parse_args()
 
 
 dockerclient = docker.from_env()
@@ -54,5 +58,4 @@ async def run(ctx, server_name, command):
     await ctx.send(f"Ran command `{command}` on server {server_name}")
 
 
-with open("bottoken.txt") as bottokenfile:
-    bot.run(bottokenfile.read())
+bot.run(args.bot_token)
